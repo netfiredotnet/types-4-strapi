@@ -147,3 +147,62 @@ To install using this github repo:
 ```
 npm install --save-dev git+https://github.com/netfiredotnet/types-4-strapi.git
 ```
+
+# TODO
+* Generate User type based on actual schema (possible?)
+* Modify Payload types:
+    ```
+    interface Meta {
+      pagination?: {
+        page: number;
+        pageSize: number;
+        pageCount: number;
+        total: number;
+      }
+    }
+
+    export interface FindOneRequestPayload<T> {
+      data: T;
+      meta: Meta;
+    }
+    export interface FindManyRequestPayload<T> {
+      data: Array<T>;
+      meta: Meta;
+    }
+    ```
+* Support type-only imports
+* Support self-references:
+    ```
+    export interface SalesOrder {
+      id: number;
+      tenant?: Tenant;
+      lines: LineItem[];
+      number?: number;
+      date?: Date;
+      vendor_number?: string;
+      po_number?: string;
+      is_template?: boolean;
+      type?: 'estimate' | 'invoice';
+      estimate?: SalesOrder;
+      invoice?: SalesOrder;
+      message?: string;
+    }
+    ```
+    to this:
+    ```
+    export interface SalesOrder {
+      id: number;
+      tenant?: Tenant;
+      lines: LineItem[];
+      number?: number;
+      date?: Date;
+      vendor_number?: string;
+      po_number?: string;
+      is_template?: boolean;
+      type?: 'estimate' | 'invoice';
+      estimate?: this;
+      invoice?: this;
+      message?: string;
+    }
+    ```
+* Generate variants of types for requests and responses. Requests differ in that relations are simply `Array<number>`s that refer to other objects, whereas the responses will contain the related object's contents if populate is set to true.
