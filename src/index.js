@@ -1,13 +1,21 @@
 #!/usr/bin/env node
 
 const fs = require('fs');
+const path = require('path');
 const createInterface = require('./createInterface');
 const createComponentInterface = require('./createComponentInterface');
 const { pascalCase, isOptional } = require('./utils');
+const { program } = require('commander');
 
-const typesDir = 'types';
+program
+.option('-o, --output <path>', 'Output directory for types', 'types')
+.option('-a, --noattributes', 'Skip attributes wrapper (if using strapi-plugin-transformer)')
+.option('-d, --nodata', 'Skip data wrapper (if using strapi-plugin-transformer)')
+.parse()
 
-if (!fs.existsSync(typesDir)) fs.mkdirSync(typesDir);
+const options = program.opts();
+
+if (!fs.existsSync(options.output)) fs.mkdirSync(options.output);
 
 // --------------------------------------------
 // Payload
@@ -26,7 +34,7 @@ const payloadTsInterface = `export interface Payload<T> {
 }
 `;
 
-fs.writeFileSync(`${typesDir}/Payload.ts`, payloadTsInterface);
+fs.writeFileSync(`${options.output}/Payload.ts`, payloadTsInterface);
 
 // --------------------------------------------
 // User
@@ -34,6 +42,15 @@ fs.writeFileSync(`${typesDir}/Payload.ts`, payloadTsInterface);
 
 const userTsInterface = `export interface User {
   id: number;
+` + (options.noattributes ? `
+  username: string;
+  email: string;
+  provider: string;
+  confirmed: boolean;
+  blocked: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+` : `
   attributes: {
     username: string;
     email: string;
@@ -43,10 +60,11 @@ const userTsInterface = `export interface User {
     createdAt: Date;
     updatedAt: Date;
   }
+`) + `
 }
 `;
 
-fs.writeFileSync(`${typesDir}/User.ts`, userTsInterface);
+fs.writeFileSync(`${options.output}/User.ts`, userTsInterface);
 
 // --------------------------------------------
 // MediaFormat
@@ -65,7 +83,7 @@ var mediaFormatTsInterface = `export interface MediaFormat {
 }
 `;
 
-fs.writeFileSync(`${typesDir}/MediaFormat.ts`, mediaFormatTsInterface);
+fs.writeFileSync(`${options.output}/MediaFormat.ts`, mediaFormatTsInterface);
 
 // --------------------------------------------
 // Media
@@ -75,6 +93,23 @@ var mediaTsInterface = `import { MediaFormat } from './MediaFormat';
 
 export interface Media {
   id: number;
+  ` + (options.noattributes ? `
+  name: string;
+  alternativeText: string;
+  caption: string;
+  width: number;
+  height: number;
+  formats: { thumbnail: MediaFormat; medium: MediaFormat; small: MediaFormat; };
+  hash: string;
+  ext: string;
+  mime: string;
+  size: number;
+  url: string;
+  previewUrl: string;
+  provider: string;
+  createdAt: Date;
+  updatedAt: Date;
+` : `
   attributes: {
     name: string;
     alternativeText: string;
@@ -92,10 +127,11 @@ export interface Media {
     createdAt: Date;
     updatedAt: Date;
   }
+`) + `
 }
 `;
 
-fs.writeFileSync(`${typesDir}/Media.ts`, mediaTsInterface);
+fs.writeFileSync(`${options.output}/Media.ts`, mediaTsInterface);
 
 // --------------------------------------------
 // API Types
@@ -113,10 +149,11 @@ if (apiFolders)
     const interfaceName = pascalCase(apiFolder);
     const interface = createInterface(
       `./src/api/${apiFolder}/content-types/${apiFolder}/schema.json`,
-      interfaceName
+      interfaceName,
+      options
     );
     if (interface)
-      fs.writeFileSync(`${typesDir}/${interfaceName}.ts`, interface);
+      fs.writeFileSync(`${options.output}/${interfaceName}.ts`, interface);
   }
 
 // --------------------------------------------
@@ -131,7 +168,7 @@ try {
 }
 
 if (componentCategoryFolders) {
-  const targetFolder = 'types/components';
+  const targetFolder = path.join(options.output, 'components');
 
   if (!fs.existsSync(targetFolder)) fs.mkdirSync(targetFolder);
 

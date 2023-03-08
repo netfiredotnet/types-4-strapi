@@ -1,12 +1,17 @@
 const fs = require('fs');
 const { pascalCase, isOptional } = require('./utils');
 
-module.exports = (schemaPath, interfaceName) => {
+module.exports = (schemaPath, interfaceName, options) => {
   var tsImports = [];
   var tsInterface = `\n`;
   tsInterface += `export interface ${interfaceName} {\n`;
   tsInterface += `  id: number;\n`;
-  tsInterface += `  attributes: {\n`;
+  if (!options.noattributes) {
+    tsInterface += `  attributes: {\n`;
+    var attrIndent = "    ";
+  } else {
+    var attrIndent = "  ";
+  }
   var schemaFile;
   var schema;
   try {
@@ -38,7 +43,7 @@ module.exports = (schemaPath, interfaceName) => {
         });
       const isArray = attributeValue.relation.endsWith('ToMany');
       const bracketsIfArray = isArray ? '[]' : '';
-      tsProperty = `    ${attributeName}: { data: ${tsPropertyType}${bracketsIfArray} };\n`;
+      tsProperty = `${attrIndent}${attributeName}: ${options.nodata ? '' : '{ data: '}${tsPropertyType}${bracketsIfArray}${options.nodata ? '' : ' }'};\n`;
     }
     // -------------------------------------------------
     // Component
@@ -56,7 +61,7 @@ module.exports = (schemaPath, interfaceName) => {
         });
       const isArray = attributeValue.repeatable;
       const bracketsIfArray = isArray ? '[]' : '';
-      tsProperty = `    ${attributeName}: ${tsPropertyType}${bracketsIfArray};\n`;
+      tsProperty = `${attrIndent}${attributeName}: ${tsPropertyType}${bracketsIfArray};\n`;
     }
     // -------------------------------------------------
     // Dynamic zone
@@ -64,7 +69,7 @@ module.exports = (schemaPath, interfaceName) => {
     else if (attributeValue.type === 'dynamiczone') {
       // TODO
       tsPropertyType = 'any';
-      tsProperty = `    ${attributeName}: ${tsPropertyType};\n`;
+      tsProperty = `${attrIndent}${attributeName}: ${tsPropertyType};\n`;
     }
     // -------------------------------------------------
     // Media
@@ -77,16 +82,16 @@ module.exports = (schemaPath, interfaceName) => {
           type: tsPropertyType,
           path: tsImportPath,
         });
-      tsProperty = `    ${attributeName}: { data: ${tsPropertyType}${
+      tsProperty = `${attrIndent}${attributeName}: ${options.nodata ? '' : '{ data: '}${tsPropertyType}${
         attributeValue.multiple ? '[]' : ''
-      } };\n`;
+      } ${options.nodata ? '' : '}'};\n`;
     }
     // -------------------------------------------------
     // Enumeration
     // -------------------------------------------------
     else if (attributeValue.type === 'enumeration') {
       const enumOptions = attributeValue.enum.map((v) => `'${v}'`).join(' | ');
-      tsProperty = `    ${attributeName}: ${enumOptions};\n`;
+      tsProperty = `${attrIndent}${attributeName}: ${enumOptions};\n`;
     }
     // -------------------------------------------------
     // Text, RichText, Email, UID
@@ -99,14 +104,14 @@ module.exports = (schemaPath, interfaceName) => {
       attributeValue.type === 'uid'
     ) {
       tsPropertyType = 'string';
-      tsProperty = `    ${attributeName}: ${tsPropertyType};\n`;
+      tsProperty = `${attrIndent}${attributeName}: ${tsPropertyType};\n`;
     }
     // -------------------------------------------------
     // Json
     // -------------------------------------------------
     else if (attributeValue.type === 'json') {
       tsPropertyType = 'any';
-      tsProperty = `    ${attributeName}: ${tsPropertyType};\n`;
+      tsProperty = `${attrIndent}${attributeName}: ${tsPropertyType};\n`;
     }
     // -------------------------------------------------
     // Password
@@ -124,7 +129,7 @@ module.exports = (schemaPath, interfaceName) => {
       attributeValue.type === 'float'
     ) {
       tsPropertyType = 'number';
-      tsProperty = `    ${attributeName}: ${tsPropertyType};\n`;
+      tsProperty = `${attrIndent}${attributeName}: ${tsPropertyType};\n`;
     }
     // -------------------------------------------------
     // Date
@@ -135,21 +140,21 @@ module.exports = (schemaPath, interfaceName) => {
       attributeValue.type === 'time'
     ) {
       tsPropertyType = 'Date';
-      tsProperty = `    ${attributeName}: ${tsPropertyType};\n`;
+      tsProperty = `${attrIndent}${attributeName}: ${tsPropertyType};\n`;
     }
     // -------------------------------------------------
     // Boolean
     // -------------------------------------------------
     else if (attributeValue.type === 'boolean') {
       tsPropertyType = 'boolean';
-      tsProperty = `    ${attributeName}: ${tsPropertyType};\n`;
+      tsProperty = `${attrIndent}${attributeName}: ${tsPropertyType};\n`;
     }
     // -------------------------------------------------
     // Others
     // -------------------------------------------------
     else {
       tsPropertyType = 'any';
-      tsProperty = `    ${attributeName}: ${tsPropertyType};\n`;
+      tsProperty = `${attrIndent}${attributeName}: ${tsPropertyType};\n`;
     }
     tsInterface += tsProperty;
   }
@@ -158,9 +163,11 @@ module.exports = (schemaPath, interfaceName) => {
   // -------------------------------------------------
   if (schema.pluginOptions?.i18n?.localized) {
     tsInterface += `    locale: string;\n`;
-    tsInterface += `    localizations?: { data: ${interfaceName}[] }\n`;
+    tsInterface += `    localizations?: ${options.nodata ? '' : '{ data: '}${interfaceName}[]${options.nodata ? '' : ' }'}\n`;
   }
-  tsInterface += `  }\n`;
+  if (!options.noattributes) {
+    tsInterface += `  }\n`;
+  }
   tsInterface += '}\n';
   for (const tsImport of tsImports) {
     tsInterface =

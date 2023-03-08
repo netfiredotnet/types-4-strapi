@@ -127,3 +127,23 @@ const json = await response.json();
 
 const users = json.data as Transformed<User>[];
 ```
+
+# Even Better:
+Instead of the `Transformed` type, in concert with the `strapi-plugin-transformer` plugin, you can tell us to omit `attributes` and `data` structures from the output:
+```
+npm run t4s -- --noattributes --nodata
+```
+or
+```
+t4s --noattributes --nodata
+```
+
+An output directory option can also be specified to output the types to a different directory:
+```
+npm run t4s -- --output <path>
+```
+
+To install using this github repo:
+```
+npm install --save-dev git+https://github.com/netfiredotnet/types-4-strapi.git
+```
