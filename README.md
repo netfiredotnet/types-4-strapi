@@ -149,7 +149,7 @@ npm install --save-dev git+https://github.com/netfiredotnet/types-4-strapi.git
 ```
 
 # TODO
-* Generate User type based on actual schema (possible?)
+* Generate User type based on actual schema (possible?) - yes
 * Modify Payload types:
     ```
     interface Meta {
@@ -205,4 +205,6 @@ npm install --save-dev git+https://github.com/netfiredotnet/types-4-strapi.git
       message?: string;
     }
     ```
-* Generate variants of types for requests and responses. Requests differ in that relations are simply `Array<number>`s that refer to other objects, whereas the responses will contain the related object's contents if populate is set to true.
+* Generate variants of types for requests and responses. Requests differ in that relations are simply `Array<number>`s that refer to other objects, whereas the responses will contain the related object's contents if populate is set to true. This also applies to components in a slightly different way: requests must contain ALL components that should be set on the record, with IDs omitted. Responses will contain an object or array of objects that include the id field.
+* Requests omit ID field always, many fields may be optional (unless required by api). Responses will have id, createdAt, updatedAt, and all except arrays will be the 
+type OR null. No optional fields (it just returns null).
